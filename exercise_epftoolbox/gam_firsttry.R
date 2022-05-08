@@ -3,6 +3,28 @@ library(tidyverse)
 
 PRJ_DIR <- "exercise_epftoolbox"
 
+INDEX_COLS <- c("date", "hour")
+TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "DayOfYear", "month")
+TARGET_COLS <- c("PriceNextDay")
+
+MAX_ORDER <- 5
+
+
+getColsForLongDf <- function(longdf, col_template, excludeNextDayCols) {
+    train_cols <- c()
+
+    for (colsuffix in col_template) {
+        train_cols <- c(train_cols, grep(colsuffix, names(longdf), value=TRUE))
+    }
+
+    if (excludeNextDayCols) {
+        train_cols <- setdiff(train_cols, grep("NextDay", train_cols, value=TRUE))
+    }
+
+    return(train_cols)
+}
+
+
 ## Set the seed for reproducibility.
 set.seed(123)
 
@@ -22,8 +44,7 @@ transformDateCols <- function(df) {
     dff$datetime <- as.POSIXct(dff$X, format="%Y-%m-%d %H:%M:%S", tz="UTC")
     dff$hour <- format(dff$datetime, "%H")
     dff$date <- as.Date(format(dff$datetime, "%Y-%m-%d"))
-    #dff$dateMinus12Hours <- as.Date(format(dff$datetime - hours(12), "%Y-%m-%d"))
-
+    dff$dateMinus12Hours <- as.Date(format(dff$datetime - hours(12), "%Y-%m-%d"))
     dff <- select(dff, Price, Exogenous.1, Exogenous.2, hour, date, dateMinus12Hours)
 
     return(dff)
@@ -47,9 +68,13 @@ transformData <- function(df) {
                     select(Price, hour, prevdaydate) %>% 
                     rename(PriceNextDay = Price)
 
-    merged_df <- merge(dff, df_PrevDay, by.x=c("date", "hour"), by.y=c("df_PrevDay", "hour"))
+    merged_df <- merge(dff, df_PrevDay, by.x=c("date", "hour"), by.y=c("prevdaydate", "hour"))
 
-    return(reshape(merged_df, idvar = "date", timevar = "hour", direction = "wide"))
+    long_df <- (reshape(merged_df, idvar = "dateMinus12Hours", timevar = "hour", direction = "wide"))
+    long_df$DayOfYear <- yday(long_df$dateMinus12Hours)
+    long_df$month <- month(long_df$dateMinus12Hours)
+
+    return(select(long_df, getColsForLongDf(long_df, c(INDEX_COLS, TRAIN_COLS), FALSE)))
 }
 
 
@@ -57,18 +82,29 @@ transformData <- function(df) {
 df_train <- transformData(df_train)
 df_test <- transformData(df_test)
 
+train_cols <- getColsForLongDf(df_train, TRAIN_COLS, TRUE)
+target_cols <- getColsForLongDf(df_train, TARGET_COLS, FALSE)
 
+# Set up grid search
+trans_fun <- list(
+                "log" = log,
+                "sqrt" = sqrt,
+                "exp" = exp,
+                "inverse" = function(x) { 1 / x }
+             )
 
-poly_5 <- function(x) { poly(x, 5) }
+## including polynomial functions of orders {1, .., MAX_ORDER}
+for (order in seq_len(MAX_ORDER)) {
+  poly_fun <- paste0("function(x) { poly(x,", order, ") }")
+  trans_fun[[paste0("poly_", order)]] <- eval(parse(text = poly_fun))
+}
 
-## Estimate poly model.
-f1 <- poly_5
-f2 <- poly_5
-
-b <- lm(rentsqm ~ f1(area) + f2(yearc) + location, data = MunichRent)  # location is a factor, so it transforms automatically
-
-summary(b)
-
-## Plot
-par(mfrow = c(1, 3), mar = c(4.1, 4.1, 0.1, 0.5))
-termplot(b, partial.resid = TRUE, se = TRUE, cex = 0.1) 
+## Get all combinations .
+combos <- expand.grid(
+  "f_exo1" = names(trans_fun),
+  "f_exo2" = names(trans_fun),
+  "f_price" = names(trans_fun),
+  "f_DayOfYear" = names(trans_fun),
+  "f_month" = names(trans_fun),
+  stringsAsFactors = FALSE
+)
