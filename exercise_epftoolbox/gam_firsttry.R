@@ -4,7 +4,7 @@ library(tidyverse)
 PRJ_DIR <- "exercise_epftoolbox"
 
 INDEX_COLS <- c("date", "hour")
-TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "Price2", "DayOfYear", "month")
+TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "PriceTransf", "DayOfYear", "month")
 TARGET_COLS <- c("PriceNextDay")
 
 MAX_ORDER <- 5
@@ -37,9 +37,9 @@ enrichDataSetPriorReshape <- function(df) {
 enrichDataSetPastReshape <- function(df) {
     dff <- data.frame(df)
 
-    dff$month <- format(dff$dateMinus12Hours, "%m")
-    dff$weekday <- as.POSIXlt(dff$dateMinus12Hours)$wday
-    dff$dayofyear <- as.POSIXlt(dff$dateMinus12Hours)$yday
+    dff$month <- format(dff$date, "%m")
+    dff$weekday <- as.POSIXlt(dff$date)$wday
+    dff$dayofyear <- as.POSIXlt(dff$date)$yday
 
     return(dff)
 }
@@ -56,7 +56,6 @@ transformDateCols <- function(df) {
     dff$datetime <- as.POSIXct(dff$X, format="%Y-%m-%d %H:%M:%S", tz="UTC")
     dff$hour <- format(dff$datetime, "%H")
     dff$date <- as.Date(format(dff$datetime, "%Y-%m-%d"))
-    dff$dateMinus12Hours <- as.Date(format(dff$datetime - hours(12), "%Y-%m-%d"))
 
     return(dff)
 }
@@ -65,7 +64,7 @@ transformDateCols <- function(df) {
 #' Prepares dataframe for training. This function transforms the data such that one row holds 
 #' hourly prices and the hourly values of the two exogenous co-variates, aswell as the target 
 #' values which are the prices hourly prices of the next day
-#'  
+#'
 #' @param df Dataframe containing columns date, Price, hour and various co-variates
 #' @return Dataframe prepared for training
 #' @examples
@@ -74,17 +73,49 @@ transformData <- function(df) {
     dff <- transformDateCols(df)
     dff <- enrichDataSetPriorReshape(dff)
     df_PrevDay <- data.frame(dff)
+    df_NextDay <- data.frame(dff)
+    df_PrevWeek <- data.frame(dff)
 
-    df_PrevDay$prevdaydate <- df_PrevDay$date - 1
-    df_PrevDay <- df_PrevDay %>% 
-                    select(Price, hour, prevdaydate) %>% 
-                    rename(PriceNextDay = Price)
+    df_NextDay$prevdaydate <- df_NextDay$date - 1
+    df_NextDay <- df_NextDay %>%
+                    select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, prevdaydate) %>%
+                    rename(PriceNextDay = Price, PriceTransfNextDay = PriceTransf, Exogenous.1NextDay = Exogenous.1, Exogenous.2NextDay = Exogenous.2)
 
-    merged_df <- merge(dff, df_PrevDay, by.x=c("date", "hour"), by.y=c("prevdaydate", "hour"))
+    df_PrevDay$nextdaydate <- df_PrevDay$date + 1
+    df_PrevDay <- df_PrevDay %>%
+                    select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextdaydate) %>%
+                    rename(PricePrevDay = Price, PriceTransfPrevDay = PriceTransf, Exogenous.1PrevDay = Exogenous.1, Exogenous.2PrevDay = Exogenous.2)
 
-    long_df <- (reshape(merged_df, idvar = "dateMinus12Hours", timevar = "hour", direction = "wide"))
+    df_PrevWeek$nextweekdate <- df_PrevWeek$date + 7
+    df_PrevWeek <- df_PrevWeek %>%
+                    select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextweekdate) %>%
+                    rename(PricePrevWeek = Price, PriceTransfPrevWeek = PriceTransf, Exogenous.1PrevWeek = Exogenous.1, Exogenous.2PrevWeek = Exogenous.2)
+
+    merged_df <- dff %>%
+                    merge(df_PrevDay, by.x=c("date", "hour"), by.y=c("nextdaydate", "hour")) %>%
+                    merge(df_PrevWeek, by.x=c("date", "hour"), by.y=c("nextweekdate", "hour")) %>%
+                    merge(df_NextDay, by.x=c("date", "hour"), by.y=c("prevdaydate", "hour"))
+
+    long_df <- (reshape(merged_df, idvar = "date", timevar = "hour", direction = "wide"))
 
     long_df <- enrichDataSetPastReshape(long_df)
+
+    cols_to_remove = c()
+
+    # Removing unnecessary columns and afternoon of day of prediction (since this can not be used for prediction -> 12 hour gap)
+    for (i in 0:23) {
+        colcounter = sprintf("%02d", i)
+        
+        for (colpre in c("datetime.", "Exogenous.1.", "Exogenous.2.", "Price.", "PriceTransf.")) {
+            if (colpre == "datetime." || i >= 12) {
+                cols_to_remove = c(cols_to_remove, paste0(colpre, colcounter))
+            }
+        }
+    }
+
+    `%ni%` <- Negate(`%in%`)
+    
+    long_df <- subset(long_df, select = names(long_df) %ni% cols_to_remove)
 
     return(select(long_df, getColsForLongDf(long_df, c(INDEX_COLS, TRAIN_COLS), FALSE)))
 }
