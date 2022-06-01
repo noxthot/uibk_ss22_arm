@@ -37,7 +37,7 @@ enrichDataSetPriorReshape <- function(df) {
 enrichDataSetPastReshape <- function(df) {
     dff <- data.frame(df)
 
-    dff$month <- format(dff$date, "%m")
+    dff$month <- as.integer(format(dff$date, "%m"))
     dff$weekday <- as.POSIXlt(dff$date)$wday
     dff$dayofyear <- as.POSIXlt(dff$date)$yday
 
