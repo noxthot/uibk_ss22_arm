@@ -78,8 +78,8 @@ transformData <- function(df) {
 
     df_NextDay$prevdaydate <- df_NextDay$date - 1
     df_NextDay <- df_NextDay %>%
-                    select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, prevdaydate) %>%
-                    rename(PriceNextDay = Price, PriceTransfNextDay = PriceTransf, Exogenous.1NextDay = Exogenous.1, Exogenous.2NextDay = Exogenous.2)
+                    select(Price, hour, prevdaydate) %>%
+                    rename(PriceNextDay = Price)
 
     df_PrevDay$nextdaydate <- df_PrevDay$date + 1
     df_PrevDay <- df_PrevDay %>%
