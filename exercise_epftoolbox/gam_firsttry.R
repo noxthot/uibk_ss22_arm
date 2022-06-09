@@ -135,27 +135,3 @@ df_test <- transformData(df_test)
 
 train_cols <- getColsForLongDf(df_train, TRAIN_COLS, TRUE)
 target_cols <- getColsForLongDf(df_train, TARGET_COLS, FALSE)
-
-# Set up grid search
-trans_fun <- list(
-                "log" = log,
-                "sqrt" = sqrt,
-                "exp" = exp,
-                "inverse" = function(x) { 1 / x }
-             )
-
-## including polynomial functions of orders {1, .., MAX_ORDER}
-for (order in seq_len(MAX_ORDER)) {
-  poly_fun <- paste0("function(x) { poly(x,", order, ") }")
-  trans_fun[[paste0("poly_", order)]] <- eval(parse(text = poly_fun))
-}
-
-## Get all combinations .
-combos <- expand.grid(
-  "f_exo1" = names(trans_fun),
-  "f_exo2" = names(trans_fun),
-  "f_price" = names(trans_fun),
-  "f_DayOfYear" = names(trans_fun),
-  "f_month" = names(trans_fun),
-  stringsAsFactors = FALSE
-)
