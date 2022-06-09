@@ -4,7 +4,8 @@ library(tidyverse)
 PRJ_DIR <- "exercise_epftoolbox"
 
 INDEX_COLS <- c("date", "hour")
-TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "PriceTransf", "DayOfYear", "month", "weekday", "dayofyear")
+
+TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "PriceTransf", "month", "weekday", "dayofyear")
 TARGET_COLS <- c("PriceNextDay")
 
 MAX_ORDER <- 5
