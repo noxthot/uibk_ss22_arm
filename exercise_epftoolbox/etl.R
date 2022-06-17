@@ -121,6 +121,19 @@ transformData <- function(df) {
     return(select(long_df, getColsForLongDf(long_df, c(INDEX_COLS, TRAIN_COLS), FALSE)))
 }
 
+scaleDataMeanStd <- function(df, mean=NULL, std=NULL) {
+    if (is.null(mean)) {
+        mean <- apply(df, 2, mean)
+    }
+
+    if (is.null(std)) {
+        std <- apply(df, 2, sd)
+    }
+
+    retdf <- scale(df, center=mean, scale=std)
+
+    return(list(df=retdf, mean=mean, std=std))
+}
 
 ## Set the seed for reproducibility.
 set.seed(123)
@@ -135,3 +148,26 @@ df_test <- transformData(df_test)
 
 train_cols <- getColsForLongDf(df_train, TRAIN_COLS, TRUE)
 target_cols <- getColsForLongDf(df_train, TARGET_COLS, FALSE)
+
+X_train <- select(df_train, all_of(train_cols))
+y_train <- select(df_train, all_of(target_cols))
+
+X_test <- select(df_test, all_of(train_cols))
+y_test <- select(df_test, all_of(target_cols))
+
+scaled_X_train_tmp <- scaleDataMeanStd(X_train)
+scaled_y_train_tmp <- scaleDataMeanStd(y_train)
+
+scaled_X_train <- scaled_X_train_tmp$df
+mean_X_train <- scaled_X_train_tmp$mean
+std_X_train <- scaled_X_train_tmp$std
+
+scaled_y_train <- scaled_y_train_tmp$df
+mean_y_train <- scaled_y_train_tmp$mean
+std_y_train <- scaled_y_train_tmp$std
+
+scaled_X_test_tmp <- scaleDataMeanStd(X_test, mean_X_train, std_X_train)
+scaled_y_test_tmp <- scaleDataMeanStd(y_test, mean_y_train, std_y_train)
+
+scaled_X_test <- scaled_X_test_tmp$df
+scaled_Y_test <- scaled_y_test_tmp$df
