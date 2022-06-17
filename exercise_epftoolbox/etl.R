@@ -177,8 +177,8 @@ scaled_X_test <- scaled_X_test_tmp$df
 scaled_Y_test <- scaled_y_test_tmp$df
 
 if (WRITE_HDF5_FILE) {
-    h5write(X_train, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="xtrain")
-    h5write(X_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="xtest")
-    h5write(y_train, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="ytrain")
-    h5write(y_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="ytest")
+    h5write(X_train, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="xtrain")
+    h5write(X_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="xtest")
+    h5write(y_train, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="ytrain")
+    h5write(y_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="ytest")
 }
