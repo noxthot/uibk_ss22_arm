@@ -1,5 +1,6 @@
-library(rhdf5)
+library(DMwR)
 library(lubridate)
+library(rhdf5)
 library(tidyverse)
 
 PRJ_DIR <- "exercise_epftoolbox"
@@ -138,6 +139,11 @@ scaleDataMeanStd <- function(df, mean=NULL, std=NULL) {
 
     return(list(df=retdf, mean=mean, std=std))
 }
+
+unscaleDataMeanStd <- function(df) {
+    return(unscale(df, df))
+}
+
 
 ## Set the seed for reproducibility.
 set.seed(123)
