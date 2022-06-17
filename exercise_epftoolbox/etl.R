@@ -1,7 +1,11 @@
+library(rhdf5)
 library(lubridate)
 library(tidyverse)
 
 PRJ_DIR <- "exercise_epftoolbox"
+OUT_HDF5_FILENAME <- "DE_fulldata.hdf5"
+
+WRITE_HDF5_FILE <- FALSE
 
 INDEX_COLS <- c("date", "hour")
 
@@ -171,3 +175,10 @@ scaled_y_test_tmp <- scaleDataMeanStd(y_test, mean_y_train, std_y_train)
 
 scaled_X_test <- scaled_X_test_tmp$df
 scaled_Y_test <- scaled_y_test_tmp$df
+
+if (WRITE_HDF5_FILE) {
+    h5write(X_train, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="xtrain")
+    h5write(X_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="xtest")
+    h5write(y_train, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="ytrain")
+    h5write(y_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME)), name="ytest")
+}
