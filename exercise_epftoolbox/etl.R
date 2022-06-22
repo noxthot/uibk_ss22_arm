@@ -196,4 +196,5 @@ if (WRITE_HDF5_FILE) {
     h5write(X_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="xtest")
     h5write(y_train, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="ytrain")
     h5write(y_test, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="ytest")
+    h5write(df_forecasts, file=file.path(PRJ_DIR, OUT_HDF5_FILENAME), name="forecasts")
 }
