@@ -57,9 +57,14 @@ enrichDataSetPastReshape <- function(df) {
 #' @return Dataframe df extended by hour and date column 
 #' @examples
 #' transformDateCols(df)
-transformDateCols <- function(df) {
+transformDateCols <- function(df, plus1day=FALSE) {
     dff <- data.frame(df)
     dff$datetime <- as.POSIXct(dff$X, format="%Y-%m-%d %H:%M:%S", tz="UTC")
+
+    if (plus1day) {
+        dff$datetime <- dff$datetime + days(1)
+    }
+
     dff$hour <- format(dff$datetime, "%H")
     dff$date <- as.Date(format(dff$datetime, "%Y-%m-%d"))
 
@@ -76,7 +81,7 @@ transformDateCols <- function(df) {
 #' @examples
 #' transformData(df)
 transformData <- function(df) {
-    dff <- transformDateCols(df)
+    dff <- transformDateCols(df, TRUE)  # add one day to have the same date reference as used in the paper's forecast csv
     dff <- enrichDataSetPriorReshape(dff)
     df_PrevDay <- data.frame(dff)
     df_NextDay <- data.frame(dff)
