@@ -10,7 +10,7 @@ WRITE_HDF5_FILE <- FALSE
 
 INDEX_COLS <- c("date", "hour")
 
-TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "PriceTransf", "month", "weekday", "dayofyear")
+TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "PriceTransf", "month", "weekday", "dayofyear")
 TARGET_COLS <- c("PriceNextDay")
 
 MAX_ORDER <- 5
@@ -123,7 +123,7 @@ transformData <- function(df) {
     
     long_df <- subset(long_df, select = names(long_df) %ni% cols_to_remove)
 
-    return(select(long_df, getColsForLongDf(long_df, c(INDEX_COLS, TRAIN_COLS), FALSE)))
+    return(select(long_df, getColsForLongDf(long_df, unique(c(INDEX_COLS, TRAIN_COLS, "Price")), FALSE)))
 }
 
 scaleDataMeanStd <- function(df, mean=NULL, std=NULL) {
