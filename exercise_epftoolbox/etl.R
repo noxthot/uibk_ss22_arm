@@ -148,9 +148,13 @@ unscaleDataMeanStd <- function(df) {
 ## Set the seed for reproducibility.
 set.seed(123)
 
-# Read training and test data from CSVs
+# Read training and test data plus forecasts from CSVs
 df_train <- read.csv(file.path(PRJ_DIR, "DE_train.csv"))
 df_test <- read.csv(file.path(PRJ_DIR, "DE_test.csv"))
+df_forecasts <- read.csv(file.path(PRJ_DIR, "DE_test_forecasts.csv"))
+
+# transform forecast data
+df_forecasts <- transformDateCols(df_forecasts)
 
 # transform training and test data
 df_train <- transformData(df_train)
