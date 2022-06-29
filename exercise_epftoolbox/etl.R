@@ -6,7 +6,7 @@ library(tidyverse)
 PRJ_DIR <- "exercise_epftoolbox"
 OUT_HDF5_FILENAME <- "DE_fulldata.hdf5"
 
-WRITE_HDF5_FILE <- FALSE
+WRITE_HDF5_FILE <- TRUE
 
 INDEX_COLS <- c("date", "hour")
 
