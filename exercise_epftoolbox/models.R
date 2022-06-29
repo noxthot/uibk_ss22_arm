@@ -6,36 +6,13 @@ library(svMisc)
 
 modelchoice = "stepwise"      # possibilities: stepwise
 
-tp <- function(z, degree = 3, knots = seq(min(z), max(z), length = 10)) {
-  ## If knots is integer.
-  if(length(knots) < 2)
-    knots <- seq(min(z), max(z), length = knots)
-  ## Setup the columns for the global polynomials.
-  Z <- outer(z, 0:degree, "^"); cn <- paste("z^", 0:degree, sep = "")
-  ## Compute local polynomials.
-  if(length(knots) > 2) {
-    knots <- sort(unique(knots))
-    for(j in 2:(length(knots) - 1)) {
-      zk <- z - knots[j]
-      check <- zk < 0
-      zk <- zk^degree
-      zk[check] <- 0
-      Z <- cbind(Z, zk)
-      cn <- c(cn, paste("(z-", round(knots[j], 2), ")^", degree, sep = ""))
-    }
-  }
-  ## Assign column names.
-  colnames(Z) <- cn
-  return(Z)
-}
-
 
 buildFormulaRhs <- function(train_cols) {
     terms <- NULL
 
     for (train_col in train_cols) {
         sparam <- ""
-        term_start <- "s("
+        term_start <- "weekdays("
 
         if (train_col %in% c("month", "weekday")) {
             sparam <- ", k=6"
