@@ -10,7 +10,7 @@ WRITE_HDF5_FILE <- FALSE
 
 INDEX_COLS <- c("date", "hour")
 
-TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "PriceTransf", "month", "weekday", "dayofyear")
+TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "PriceTransf", "month", "weekday", "dayofyear")
 TARGET_COLS <- c("PriceNextDay")
 
 MAX_ORDER <- 5
