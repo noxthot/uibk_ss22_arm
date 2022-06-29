@@ -72,7 +72,7 @@ if (methodchoice == "stepwise") {
             b <- gam(f, data=df_train, control=ctrl)
             p <- predict(b, newdata=df_test)
 
-            curr_err <- smape(df_test[[target_col]], p)
+            curr_err <- smape(df_test[[target_col]], p)  # TODO: not nice because we should not use df_test as minimization criterion
 
             err <- c(err, curr_err)
         }
