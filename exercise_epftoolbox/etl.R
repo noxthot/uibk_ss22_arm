@@ -15,6 +15,8 @@ TARGET_COLS <- c("PriceNextDay")
 
 MAX_ORDER <- 5
 
+ENABLE_12_HOUR_GAP = FALSE  # TRUE .. Bids need to be given until 12:00 (midday); FALSE .. Give bids at 24:00 (midnight)
+
 
 getColsForLongDf <- function(longdf, col_template, excludeNextDayCols) {
     train_cols <- c()
@@ -113,12 +115,13 @@ transformData <- function(df) {
 
     cols_to_remove = c()
 
-    # Removing unnecessary columns and afternoon of day of prediction (since this can not be used for prediction -> 12 hour gap)
+    # Removing unnecessary columns
     for (i in 0:23) {
         colcounter = sprintf("%02d", i)
+        cols_to_remove = c(cols_to_remove, paste0("datetime.", colcounter))
         
-        for (colpre in c("datetime.", "Exogenous.1.", "Exogenous.2.", "Price.", "PriceTransf.")) {
-            if (colpre == "datetime." || i >= 12) {
+        if ((ENABLE_12_HOUR_GAP) & (i >= 12)) {
+            for (colpre in c("Exogenous.1.", "Exogenous.2.", "Price.", "PriceTransf.")) {
                 cols_to_remove = c(cols_to_remove, paste0(colpre, colcounter))
             }
         }
