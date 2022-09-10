@@ -81,6 +81,7 @@ X_test_sc = xscaler.transform(X_test)
 y_train_sc = yscaler.transform(y_train)
 y_test_sc = yscaler.transform(y_test)
 
+#%%
 if modelchoice == "nn":
     def nnmodel(inputdim, outputdim):
         model = Sequential()
@@ -130,6 +131,7 @@ elif modelchoice == "lightgbm":
 else:
     raise Exception(f"unknown setting {modelchoice}")
 
+#%%
 pred_sc = model.predict(X_test_sc)
 pred = yscaler.inverse_transform(pred_sc)
 
