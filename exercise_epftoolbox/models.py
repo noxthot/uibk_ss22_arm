@@ -1,7 +1,7 @@
 #%%
-scalemethod = "meanstd"       # possibilites: minmax, meanstd
-modelchoice = "gradientboost"      # possibilities: adaboost, elastic, knn, lasso, lightgbm, nn, svr
-remove_outliers = True
+scalemethod = "minmax"       # possibilites: minmax, meanstd
+modelchoice = "lightgbm"      # possibilities: adaboost, elastic, knn, lasso, lightgbm, nn, svr, gradientboost
+remove_outliers = False
 
 #%%
 import h5py
@@ -27,6 +27,7 @@ from tensorflow.keras.optimizers import Adam
 warnings.filterwarnings('ignore', category=NaturalNameWarning)
 
 filepath = os.path.join("exercise_epftoolbox", "DE_fulldata.hdf5")
+filepath = "DE_fulldata.hdf5"
 
 def smape(pred, real):
     return (1 / len(pred)) * np.sum(2 * np.abs(real - pred) / (np.abs(pred) + np.abs(real)))
@@ -85,20 +86,23 @@ y_test_sc = yscaler.transform(y_test)
 if modelchoice == "nn":
     def nnmodel(inputdim, outputdim):
         model = Sequential()
-        model.add(Dense(256, input_dim=inputdim, kernel_initializer='he_normal', activation='leaky_relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
+        model.add(Dense(256, input_dim=inputdim, kernel_initializer='he_uniform', activation='leaky_relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
         model.add(Dense(outputdim, kernel_initializer='he_uniform', activation='linear'))
-        model.compile(loss='mean_absolute_error', optimizer=Adam())
+        model.compile(loss='mean_squared_error', optimizer=Adam())
 
         return model
 
     model = nnmodel(X_train_sc.shape[1], y_train_sc.shape[1])
 
     tf.keras.backend.clear_session()
-    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100, restore_best_weights=True)
-    history = model.fit(X_train_sc, y_train_sc, epochs=10000, batch_size=8, verbose=1, shuffle=True, validation_split=0.1, workers=15, use_multiprocessing=True, callbacks=[callback])
+    callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=250, restore_best_weights=True)
+    history = model.fit(X_train_sc, y_train_sc, epochs=10000, batch_size=16, verbose=1, shuffle=True, validation_split=0.1, workers=15, use_multiprocessing=True, callbacks=[callback])
 
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
@@ -123,10 +127,10 @@ elif modelchoice == "adaboost":
     model = MultiOutputRegressor(AdaBoostRegressor(n_estimators=100))
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "gradientboost":
-    model = MultiOutputRegressor(GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=3))
+    model = MultiOutputRegressor(GradientBoostingRegressor(loss="squared_loss", n_estimators=500, learning_rate=0.1, max_depth=10, validation_fraction=0.2))
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "lightgbm":
-    model = MultiOutputRegressor(lightgbm.LGBMRegressor())
+    model = MultiOutputRegressor(lightgbm.LGBMRegressor(n_estimators=300, num_leaves=100))
     model.fit(X_train_sc, y_train_sc)
 else:
     raise Exception(f"unknown setting {modelchoice}")
@@ -145,4 +149,13 @@ fig.update_layout(shapes=[{'type': 'line', 'yref': 'paper', 'xref': 'paper', 'y0
 #fig.add_trace([[np.min(pred[:, 0]), np.max(pred[:, 0])], [np.min(y_test.iloc[:, 0]), np.max(y_test.iloc[:, 0])]])
 fig.show()
 
+#%%
+train_pred_sc = model.predict(X_train_sc)
+train_pred = yscaler.inverse_transform(train_pred_sc)
+print(np.mean(smape(train_pred, y_train)))
+
+fig = px.scatter(x=train_pred[:, 0], y=y_train.iloc[:, 0], labels=dict(x="pred", y="real"))
+fig.update_layout(shapes=[{'type': 'line', 'yref': 'paper', 'xref': 'paper', 'y0': 0, 'y1': 1, 'x0': 0, 'x1': 1}])
+#fig.add_trace([[np.min(pred[:, 0]), np.max(pred[:, 0])], [np.min(y_test.iloc[:, 0]), np.max(y_test.iloc[:, 0])]])
+fig.show()
 # %%
