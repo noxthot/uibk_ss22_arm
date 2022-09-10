@@ -13,8 +13,6 @@ INDEX_COLS <- c("date", "hour")
 TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "PriceTransf", "month", "weekday", "dayofyear")
 TARGET_COLS <- c("PriceNextDay")
 
-MAX_ORDER <- 5
-
 ENABLE_12_HOUR_GAP = FALSE  # TRUE .. Bids need to be given until 12:00 (midday); FALSE .. Give bids at 24:00 (midnight)
 
 
@@ -35,8 +33,11 @@ getColsForLongDf <- function(longdf, col_template, excludeNextDayCols) {
 
 enrichDataSetPriorReshape <- function(df) {
     dff <- data.frame(df)
+    mx <- mean(dff$Price)
+    sdx <- sd(dff$Price)
+    x <- (dff$Price - mx) / sdx
 
-    dff$PriceTransf <- log(dff$Price + sqrt(dff$Price ^ 2 + 1))  # expert feature
+    dff$PriceTransf <- log(x + sqrt(x ^ 2 + 1))  # expert feature
 
     return(dff)
 }
