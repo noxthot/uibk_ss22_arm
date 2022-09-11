@@ -16,18 +16,30 @@ TRAIN_COLS <- c(#"CurrDayExogenous.1",
                 "CurrDayExogenous.2Transf", 
                 #"CurrDayPrice", 
                 "CurrDayPriceTransf", 
-                #"PrevDayExogenous.1", 
-                #"PrevDayExogenous.2", 
-                "PrevDayExogenous.1Transf", 
-                "PrevDayExogenous.2Transf", 
-                #"PrevDayPrice", 
-                "PrevDayPriceTransf", 
-                #"PrevWeekExogenous.1", 
-                #"PrevWeekExogenous.2", 
-                "PrevWeekExogenous.1Transf", 
-                "PrevWeekExogenous.2Transf", 
-                #"PrevWeekPrice", 
-                "PrevWeekPriceTransf", 
+                #"L1Exogenous.1", 
+                #"L1Exogenous.2", 
+                "L1Exogenous.1Transf", 
+                "L1Exogenous.2Transf", 
+                #"L1Price", 
+                "L1PriceTransf", 
+                #"L2Exogenous.1", 
+                #"L2Exogenous.2", 
+                "L2Exogenous.1Transf", 
+                "L2Exogenous.2Transf", 
+                #"L2Price", 
+                "L2PriceTransf", 
+                #"L3Exogenous.1", 
+                #"L3Exogenous.2", 
+                "L3Exogenous.1Transf", 
+                "L3Exogenous.2Transf", 
+                #"L3Price", 
+                "L3PriceTransf", 
+                #"L7Exogenous.1", 
+                #"L7Exogenous.2", 
+                "L7Exogenous.1Transf", 
+                "L7Exogenous.2Transf", 
+                #"L7Price", 
+                "L7PriceTransf", 
                 "month", 
                 "weekday", 
                 "dayofyear")
@@ -107,33 +119,36 @@ transformDateCols <- function(df, plus1day=FALSE) {
 transformData <- function(df) {
     dff <- transformDateCols(df, TRUE)  # add one day to have the same date reference as used in the paper's forecast csv
     dff <- enrichDataSetPriorReshape(dff)
-
-    df_PrevDay <- data.frame(dff)
+    dfftmp <- data.frame(dff)
     df_NextDay <- data.frame(dff)
-    df_PrevWeek <- data.frame(dff)
 
-    dff <- dff %>% 
-            rename(CurrDayPrice = Price, CurrDayPriceTransf = PriceTransf, CurrDayExogenous.1 = Exogenous.1, CurrDayExogenous.2 = Exogenous.2, CurrDayExogenous.1Transf = Exogenous.1, CurrDayExogenous.2Transf = Exogenous.2)
-
+    merged_df <- dff %>% 
+                    rename(CurrDayPrice = Price, CurrDayPriceTransf = PriceTransf, CurrDayExogenous.1 = Exogenous.1, CurrDayExogenous.2 = Exogenous.2, CurrDayExogenous.1Transf = Exogenous.1, CurrDayExogenous.2Transf = Exogenous.2)
+    
     df_NextDay$prevdaydate <- df_NextDay$date - 1
     df_NextDay <- df_NextDay %>%
                     select(Price, hour, prevdaydate) %>%
                     rename(NextDayPrice = Price)
+  
+    merged_df <- merged_df %>% 
+                    merge(df_NextDay, by.x=c("date", "hour"), by.y=c(paste0("prevdaydate"), "hour"))
 
-    df_PrevDay$nextdaydate <- df_PrevDay$date + 1
-    df_PrevDay <- df_PrevDay %>%
-                    select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextdaydate) %>%
-                    rename(PrevDayPrice = Price, PrevDayPriceTransf = PriceTransf, PrevDayExogenous.1 = Exogenous.1, PrevDayExogenous.2 = Exogenous.2, PrevDayExogenous.1Transf = Exogenous.1, PrevDayExogenous.2Transf = Exogenous.2)
+    lagdays <- c(1, 2, 3, 7)
 
-    df_PrevWeek$nextweekdate <- df_PrevWeek$date + 7
-    df_PrevWeek <- df_PrevWeek %>%
-                    select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextweekdate) %>%
-                    rename(PrevWeekPrice = Price, PrevWeekPriceTransf = PriceTransf, PrevWeekExogenous.1 = Exogenous.1, PrevWeekExogenous.2 = Exogenous.2, PrevWeekExogenous.1Transf = Exogenous.1, PrevWeekExogenous.2Transf = Exogenous.2)
+    for (l in lagdays) {
+        df_lagday <- data.frame(dfftmp)
 
-    merged_df <- dff %>%
-                    merge(df_PrevDay, by.x=c("date", "hour"), by.y=c("nextdaydate", "hour")) %>%
-                    merge(df_PrevWeek, by.x=c("date", "hour"), by.y=c("nextweekdate", "hour")) %>%
-                    merge(df_NextDay, by.x=c("date", "hour"), by.y=c("prevdaydate", "hour"))
+        df_lagday[paste0("L", l, "date")] <- df_lagday$date + l
+        df_lagday <- df_lagday %>%
+                        select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, paste0("L", l, "date"))
+        
+        for (colname in c("Price", "PriceTransf", "Exogenous.1", "Exogenous.2", "Exogenous.1Transf", "Exogenous.2Transf")) {
+            colnames(df_lagday)[colnames(df_lagday) == colname] = paste0("L", l, colname)
+        }
+
+        merged_df <- merged_df %>%
+                    merge(df_lagday, by.x=c("date", "hour"), by.y=c(paste0("L", l, "date"), "hour"))
+    }
 
     long_df <- (reshape(merged_df, idvar = "date", timevar = "hour", direction = "wide"))
 
