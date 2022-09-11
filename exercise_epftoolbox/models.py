@@ -2,6 +2,7 @@
 scalemethod = "minmax"       # possibilites: minmax, meanstd
 modelchoice = "lightgbm"      # possibilities: adaboost, elastic, knn, lasso, lightgbm, nn, svr, gradientboost
 remove_outliers = False
+use_long_format = True
 
 #%%
 import h5py
@@ -41,7 +42,28 @@ with h5py.File(filepath, "r") as f:
 
 X_train = data["xtrain"]
 y_train = data["ytrain"]
+X_test = data["xtest"]
+y_test = data["ytest"]
 
+#%%
+if use_long_format:
+    dftmp = pd.concat([X_train, y_train], axis=1)
+    dftmp.loc[:, "id"] = dftmp.index
+    dftmp = pd.wide_to_long(dftmp, ["PriceNextDay."], i="id", j="hour")
+    dftmp = dftmp.reset_index().drop("id", axis=1)
+
+    X_train = dftmp[X_train.columns.to_list() + ["hour"]]
+    y_train = dftmp[["PriceNextDay."]]
+
+    dftmp = pd.concat([X_test, y_test], axis=1)
+    dftmp.loc[:, "id"] = dftmp.index
+    dftmp = pd.wide_to_long(dftmp, ["PriceNextDay."], i="id", j="hour")
+    dftmp = dftmp.reset_index().drop("id", axis=1)
+
+    X_test = dftmp[X_test.columns.to_list() + ["hour"]]
+    y_test = dftmp[["PriceNextDay."]]
+
+#%%
 if remove_outliers:
     for col in y_train.columns:
         q10, q90 = np.percentile(y_train[col], [10, 90])
@@ -59,9 +81,6 @@ if remove_outliers:
     X_train = X_train[~rowswithna]
     y_train = y_train[~rowswithna]
 
-
-X_test = data["xtest"]
-y_test = data["ytest"]
 df_forecasts = data["forecasts"]
 
 if scalemethod == "minmax":
@@ -121,22 +140,27 @@ elif modelchoice == "elastic":
     model = linear_model.MultiTaskElasticNet(alpha=0.1, fit_intercept=False, max_iter=10000)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "svr":
-    model = MultiOutputRegressor(svm.SVR())
+    model = svm.SVR()
+    model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "adaboost":
-    model = MultiOutputRegressor(AdaBoostRegressor(n_estimators=100))
+    model = AdaBoostRegressor(n_estimators=100)
+    model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "gradientboost":
-    model = MultiOutputRegressor(GradientBoostingRegressor(loss="squared_loss", n_estimators=500, learning_rate=0.1, max_depth=10, validation_fraction=0.2))
+    model = GradientBoostingRegressor(loss="squared_loss", n_estimators=500, learning_rate=0.1, max_depth=10, validation_fraction=0.2)
+    model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "lightgbm":
-    model = MultiOutputRegressor(lightgbm.LGBMRegressor(n_estimators=300, num_leaves=100))
+    model = lightgbm.LGBMRegressor(n_estimators=1000, num_leaves=100)
+    model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 else:
     raise Exception(f"unknown setting {modelchoice}")
 
 #%%
 pred_sc = model.predict(X_test_sc)
+pred_sc = pred_sc.reshape(-1, 1) if use_long_format else pred_sc
 pred = yscaler.inverse_transform(pred_sc)
 
 # %%
@@ -151,6 +175,7 @@ fig.show()
 
 #%%
 train_pred_sc = model.predict(X_train_sc)
+train_pred_sc = train_pred_sc.reshape(-1, 1) if use_long_format else train_pred_sc
 train_pred = yscaler.inverse_transform(train_pred_sc)
 print(np.mean(smape(train_pred, y_train)))
 
