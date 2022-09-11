@@ -106,12 +106,12 @@ if modelchoice == "nn":
     def nnmodel(inputdim, outputdim):
         model = Sequential()
         model.add(Dense(256, input_dim=inputdim, kernel_initializer='he_uniform', activation='leaky_relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
-        model.add(Dense(256, kernel_initializer='he_uniform', activation='relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
+        model.add(Dense(256, kernel_initializer='he_uniform', activation='leaky_relu'))
         model.add(Dense(outputdim, kernel_initializer='he_uniform', activation='linear'))
         model.compile(loss='mean_squared_error', optimizer=Adam())
 
