@@ -1,6 +1,6 @@
 #%%
 scalemethod = "minmax"       # possibilites: minmax, meanstd
-modelchoice = "lightgbm"      # possibilities: adaboost, elastic, knn, lasso, lightgbm, nn, svr, gradientboost
+modelchoice = "nn"      # possibilities: adaboost, elastic, knn, lasso, lightgbm, nn, svr, gradientboost
 remove_outliers = False
 use_long_format = True
 
@@ -148,11 +148,11 @@ elif modelchoice == "adaboost":
     model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "gradientboost":
-    model = GradientBoostingRegressor(loss="squared_loss", n_estimators=500, learning_rate=0.1, max_depth=10, validation_fraction=0.2)
+    model = GradientBoostingRegressor(loss="squared_error", n_estimators=2000, learning_rate=0.1, validation_fraction=0.2, min_samples_split=10)
     model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "lightgbm":
-    model = lightgbm.LGBMRegressor(n_estimators=1000, num_leaves=100)
+    model = lightgbm.LGBMRegressor(boosting_type="dart", n_estimators=2000)
     model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 else:
