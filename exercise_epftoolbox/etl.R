@@ -10,16 +10,22 @@ WRITE_HDF5_FILE <- TRUE
 
 INDEX_COLS <- c("date", "hour")
 
-TRAIN_COLS <- c("CurrDayExogenous.1", 
-                "CurrDayExogenous.2", 
+TRAIN_COLS <- c(#"CurrDayExogenous.1", 
+                #"CurrDayExogenous.2", 
+                "CurrDayExogenous.1Transf", 
+                "CurrDayExogenous.2Transf", 
                 #"CurrDayPrice", 
                 "CurrDayPriceTransf", 
                 #"PrevDayExogenous.1", 
                 #"PrevDayExogenous.2", 
+                "PrevDayExogenous.1Transf", 
+                "PrevDayExogenous.2Transf", 
                 #"PrevDayPrice", 
-                #"PrevDayPriceTransf", 
+                "PrevDayPriceTransf", 
                 #"PrevWeekExogenous.1", 
                 #"PrevWeekExogenous.2", 
+                "PrevWeekExogenous.1Transf", 
+                "PrevWeekExogenous.2Transf", 
                 #"PrevWeekPrice", 
                 "PrevWeekPriceTransf", 
                 "month", 
@@ -107,7 +113,7 @@ transformData <- function(df) {
     df_PrevWeek <- data.frame(dff)
 
     dff <- dff %>% 
-            rename(CurrDayPrice = Price, CurrDayPriceTransf = PriceTransf, CurrDayExogenous.1 = Exogenous.1, CurrDayExogenous.2 = Exogenous.2)
+            rename(CurrDayPrice = Price, CurrDayPriceTransf = PriceTransf, CurrDayExogenous.1 = Exogenous.1, CurrDayExogenous.2 = Exogenous.2, CurrDayExogenous.1Transf = Exogenous.1, CurrDayExogenous.2Transf = Exogenous.2)
 
     df_NextDay$prevdaydate <- df_NextDay$date - 1
     df_NextDay <- df_NextDay %>%
@@ -117,12 +123,12 @@ transformData <- function(df) {
     df_PrevDay$nextdaydate <- df_PrevDay$date + 1
     df_PrevDay <- df_PrevDay %>%
                     select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextdaydate) %>%
-                    rename(PrevDayPrice = Price, PrevDayPriceTransf = PriceTransf, PrevDayExogenous.1 = Exogenous.1, PrevDayExogenous.2 = Exogenous.2)
+                    rename(PrevDayPrice = Price, PrevDayPriceTransf = PriceTransf, PrevDayExogenous.1 = Exogenous.1, PrevDayExogenous.2 = Exogenous.2, PrevDayExogenous.1Transf = Exogenous.1, PrevDayExogenous.2Transf = Exogenous.2)
 
     df_PrevWeek$nextweekdate <- df_PrevWeek$date + 7
     df_PrevWeek <- df_PrevWeek %>%
                     select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextweekdate) %>%
-                    rename(PrevWeekPrice = Price, PrevWeekPriceTransf = PriceTransf, PrevWeekExogenous.1 = Exogenous.1, PrevWeekExogenous.2 = Exogenous.2)
+                    rename(PrevWeekPrice = Price, PrevWeekPriceTransf = PriceTransf, PrevWeekExogenous.1 = Exogenous.1, PrevWeekExogenous.2 = Exogenous.2, PrevWeekExogenous.1Transf = Exogenous.1, PrevWeekExogenous.2Transf = Exogenous.2)
 
     merged_df <- dff %>%
                     merge(df_PrevDay, by.x=c("date", "hour"), by.y=c("nextdaydate", "hour")) %>%
