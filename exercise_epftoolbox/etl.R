@@ -66,11 +66,14 @@ getColsForLongDf <- function(longdf, col_template, excludeNextDayCols) {
 
 enrichDataSetPriorReshape <- function(df) {
     dff <- data.frame(df)
-    mx <- mean(dff$Price)
-    sdx <- sd(dff$Price)
-    x <- (dff$Price - mx) / sdx
+    
+    for (colname in c("Price", "Exogenous.1", "Exogenous.2")) {
+        mx <- mean(dff[[colname]])
+        sdx <- sd(dff[[colname]])
+        x <- (dff[[colname]] - mx) / sdx
 
-    dff$PriceTransf <- log(x + sqrt(x ^ 2 + 1))  # expert feature
+        dff[paste0(colname, "Transf")] <- log(x + sqrt(x ^ 2 + 1))  # expert feature
+    }
 
     return(dff)
 }
@@ -140,7 +143,7 @@ transformData <- function(df) {
 
         df_lagday[paste0("L", l, "date")] <- df_lagday$date + l
         df_lagday <- df_lagday %>%
-                        select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, paste0("L", l, "date"))
+                        select(Price, PriceTransf, Exogenous.1, Exogenous.2, Exogenous.1Transf, Exogenous.2Transf, hour, paste0("L", l, "date"))
         
         for (colname in c("Price", "PriceTransf", "Exogenous.1", "Exogenous.2", "Exogenous.1Transf", "Exogenous.2Transf")) {
             colnames(df_lagday)[colnames(df_lagday) == colname] = paste0("L", l, colname)
