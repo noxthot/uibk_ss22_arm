@@ -49,19 +49,19 @@ y_test = data["ytest"]
 if use_long_format:
     dftmp = pd.concat([X_train, y_train], axis=1)
     dftmp.loc[:, "id"] = dftmp.index
-    dftmp = pd.wide_to_long(dftmp, ["PriceNextDay."], i="id", j="hour")
+    dftmp = pd.wide_to_long(dftmp, ["NextDayPrice."], i="id", j="hour")
     dftmp = dftmp.reset_index().drop("id", axis=1)
 
     X_train = dftmp[X_train.columns.to_list() + ["hour"]]
-    y_train = dftmp[["PriceNextDay."]]
+    y_train = dftmp[["NextDayPrice."]]
 
     dftmp = pd.concat([X_test, y_test], axis=1)
     dftmp.loc[:, "id"] = dftmp.index
-    dftmp = pd.wide_to_long(dftmp, ["PriceNextDay."], i="id", j="hour")
+    dftmp = pd.wide_to_long(dftmp, ["NextDayPrice."], i="id", j="hour")
     dftmp = dftmp.reset_index().drop("id", axis=1)
 
     X_test = dftmp[X_test.columns.to_list() + ["hour"]]
-    y_test = dftmp[["PriceNextDay."]]
+    y_test = dftmp[["NextDayPrice."]]
 
 #%%
 if remove_outliers:

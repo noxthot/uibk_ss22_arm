@@ -10,8 +10,23 @@ WRITE_HDF5_FILE <- TRUE
 
 INDEX_COLS <- c("date", "hour")
 
-TRAIN_COLS <- c("Exogenous.1", "Exogenous.2", "Price", "PriceTransf", "month", "weekday", "dayofyear")
-TARGET_COLS <- c("PriceNextDay")
+TRAIN_COLS <- c("CurrDayExogenous.1", 
+                "CurrDayExogenous.2", 
+                #"CurrDayPrice", 
+                "CurrDayPriceTransf", 
+                #"PrevDayExogenous.1", 
+                #"PrevDayExogenous.2", 
+                #"PrevDayPrice", 
+                #"PrevDayPriceTransf", 
+                #"PrevWeekExogenous.1", 
+                #"PrevWeekExogenous.2", 
+                #"PrevWeekPrice", 
+                "PrevWeekPriceTransf", 
+                "month", 
+                "weekday", 
+                "dayofyear")
+
+TARGET_COLS <- c("NextDayPrice")
 
 ENABLE_12_HOUR_GAP = FALSE  # TRUE .. Bids need to be given until 12:00 (midday); FALSE .. Give bids at 24:00 (midnight)
 
@@ -86,24 +101,28 @@ transformDateCols <- function(df, plus1day=FALSE) {
 transformData <- function(df) {
     dff <- transformDateCols(df, TRUE)  # add one day to have the same date reference as used in the paper's forecast csv
     dff <- enrichDataSetPriorReshape(dff)
+
     df_PrevDay <- data.frame(dff)
     df_NextDay <- data.frame(dff)
     df_PrevWeek <- data.frame(dff)
 
+    dff <- dff %>% 
+            rename(CurrDayPrice = Price, CurrDayPriceTransf = PriceTransf, CurrDayExogenous.1 = Exogenous.1, CurrDayExogenous.2 = Exogenous.2)
+
     df_NextDay$prevdaydate <- df_NextDay$date - 1
     df_NextDay <- df_NextDay %>%
                     select(Price, hour, prevdaydate) %>%
-                    rename(PriceNextDay = Price)
+                    rename(NextDayPrice = Price)
 
     df_PrevDay$nextdaydate <- df_PrevDay$date + 1
     df_PrevDay <- df_PrevDay %>%
                     select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextdaydate) %>%
-                    rename(PricePrevDay = Price, PriceTransfPrevDay = PriceTransf, Exogenous.1PrevDay = Exogenous.1, Exogenous.2PrevDay = Exogenous.2)
+                    rename(PrevDayPrice = Price, PrevDayPriceTransf = PriceTransf, PrevDayExogenous.1 = Exogenous.1, PrevDayExogenous.2 = Exogenous.2)
 
     df_PrevWeek$nextweekdate <- df_PrevWeek$date + 7
     df_PrevWeek <- df_PrevWeek %>%
                     select(Price, PriceTransf, Exogenous.1, Exogenous.2, hour, nextweekdate) %>%
-                    rename(PricePrevWeek = Price, PriceTransfPrevWeek = PriceTransf, Exogenous.1PrevWeek = Exogenous.1, Exogenous.2PrevWeek = Exogenous.2)
+                    rename(PrevWeekPrice = Price, PrevWeekPriceTransf = PriceTransf, PrevWeekExogenous.1 = Exogenous.1, PrevWeekExogenous.2 = Exogenous.2)
 
     merged_df <- dff %>%
                     merge(df_PrevDay, by.x=c("date", "hour"), by.y=c("nextdaydate", "hour")) %>%
@@ -122,7 +141,7 @@ transformData <- function(df) {
         cols_to_remove = c(cols_to_remove, paste0("datetime.", colcounter))
         
         if ((ENABLE_12_HOUR_GAP) & (i >= 12)) {
-            for (colpre in c("Exogenous.1.", "Exogenous.2.", "Price.", "PriceTransf.")) {
+            for (colpre in c("CurrDayExogenous.1.", "CurrDayExogenous.2.", "CurrDayPrice.", "CurrDayPriceTransf.")) {
                 cols_to_remove = c(cols_to_remove, paste0(colpre, colcounter))
             }
         }
