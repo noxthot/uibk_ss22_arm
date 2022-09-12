@@ -1,5 +1,5 @@
 #%%
-scalemethod = "minmax"       # possibilites: minmax, meanstd
+scalemethod = "no"       # possibilites: minmax, meanstd, quantile, no
 modelchoice = "nn"      # possibilities: adaboost, elastic, knn, lasso, lightgbm, nn, svr, gradientboost
 remove_outliers = False
 use_long_format = True
@@ -19,7 +19,7 @@ from matplotlib import pyplot as plt
 from sklearn import linear_model, neighbors, svm
 from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, QuantileTransformer
 from tables import NaturalNameWarning
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
@@ -89,17 +89,30 @@ if scalemethod == "minmax":
 elif scalemethod == "meanstd":
     xscaler = StandardScaler()
     yscaler = StandardScaler()
+elif scalemethod == "quantile":
+    xscaler = QuantileTransformer()
+    yscaler = QuantileTransformer()
+elif scalemethod == "no":
+    pass
 else:
     raise Exception(f"unknown setting {scalemethod}")
 
-xscaler.fit(X_train)
-yscaler.fit(y_train)
+if scalemethod != "no":
+    xscaler.fit(X_train)
+    yscaler.fit(y_train)
 
-X_train_sc = xscaler.transform(X_train)
-X_test_sc = xscaler.transform(X_test)
+    X_train_sc = xscaler.transform(X_train)
+    X_test_sc = xscaler.transform(X_test)
 
-y_train_sc = yscaler.transform(y_train)
-y_test_sc = yscaler.transform(y_test)
+    y_train_sc = yscaler.transform(y_train)
+    y_test_sc = yscaler.transform(y_test)
+else:
+    X_train_sc = X_train
+    X_test_sc = X_test
+
+    y_train_sc = y_train
+    y_test_sc = y_test
+
 
 #%%
 if modelchoice == "nn":
@@ -161,7 +174,7 @@ else:
 #%%
 pred_sc = model.predict(X_test_sc)
 pred_sc = pred_sc.reshape(-1, 1) if use_long_format else pred_sc
-pred = yscaler.inverse_transform(pred_sc)
+pred = yscaler.inverse_transform(pred_sc) if scalemethod != "no" else pred_sc
 
 # %%
 smape_all = smape(pred, y_test)
@@ -176,7 +189,7 @@ fig.show()
 #%%
 train_pred_sc = model.predict(X_train_sc)
 train_pred_sc = train_pred_sc.reshape(-1, 1) if use_long_format else train_pred_sc
-train_pred = yscaler.inverse_transform(train_pred_sc)
+train_pred = yscaler.inverse_transform(train_pred_sc) if scalemethod != "no" else train_pred_sc
 print(np.mean(smape(train_pred, y_train)))
 
 fig = px.scatter(x=train_pred[:, 0], y=y_train.iloc[:, 0], labels=dict(x="pred", y="real"))
