@@ -18,6 +18,7 @@ import tensorflow as tf
 from matplotlib import pyplot as plt
 from sklearn import linear_model, neighbors, svm
 from sklearn.ensemble import AdaBoostRegressor, GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, QuantileTransformer
 from tables import NaturalNameWarning
@@ -157,7 +158,7 @@ elif modelchoice == "svr":
     model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "adaboost":
-    model = AdaBoostRegressor(n_estimators=100)
+    model = AdaBoostRegressor(n_estimators=1000)
     model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "gradientboost":
@@ -165,9 +166,11 @@ elif modelchoice == "gradientboost":
     model = model if use_long_format else MultiOutputRegressor(model)
     model.fit(X_train_sc, y_train_sc)
 elif modelchoice == "lightgbm":
-    model = lightgbm.LGBMRegressor(boosting_type="dart", n_estimators=2000)
+    X_train_lgbm, X_val_lgbm, y_train_lgbm, y_val_lgbm = train_test_split(X_train_sc, y_train_sc, test_size=0.2)
+
+    model = lightgbm.LGBMRegressor(boosting_type="dart", n_estimators=10000, learning_rate=0.1, subsample_for_bin=1000000, num_iterations=50000)
     model = model if use_long_format else MultiOutputRegressor(model)
-    model.fit(X_train_sc, y_train_sc)
+    model.fit(X_train_lgbm, y_train_lgbm, eval_set=(X_val_lgbm, y_val_lgbm), eval_metric="l1", early_stopping_rounds=100)
 else:
     raise Exception(f"unknown setting {modelchoice}")
 
