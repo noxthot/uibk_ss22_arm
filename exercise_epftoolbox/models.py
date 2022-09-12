@@ -182,7 +182,7 @@ print(np.mean(smape_all))
 
 # %%
 fig = px.scatter(x=pred[:, 0], y=y_test.iloc[:, 0], labels=dict(x="pred", y="real"))
-fig.update_layout(shapes=[{'type': 'line', 'yref': 'paper', 'xref': 'paper', 'y0': 0, 'y1': 1, 'x0': 0, 'x1': 1}])
+fig.update_layout(shapes=[{'type': 'line', 'y0': np.min(y_test.iloc[:, 0]), 'y1': np.max(y_test.iloc[:, 0]), 'x0': np.min(y_test.iloc[:, 0]), 'x1': np.max(y_test.iloc[:, 0])}])
 #fig.add_trace([[np.min(pred[:, 0]), np.max(pred[:, 0])], [np.min(y_test.iloc[:, 0]), np.max(y_test.iloc[:, 0])]])
 fig.show()
 
@@ -193,7 +193,6 @@ train_pred = yscaler.inverse_transform(train_pred_sc) if scalemethod != "no" els
 print(np.mean(smape(train_pred, y_train)))
 
 fig = px.scatter(x=train_pred[:, 0], y=y_train.iloc[:, 0], labels=dict(x="pred", y="real"))
-fig.update_layout(shapes=[{'type': 'line', 'yref': 'paper', 'xref': 'paper', 'y0': 0, 'y1': 1, 'x0': 0, 'x1': 1}])
-#fig.add_trace([[np.min(pred[:, 0]), np.max(pred[:, 0])], [np.min(y_test.iloc[:, 0]), np.max(y_test.iloc[:, 0])]])
+fig.update_layout(shapes=[{'type': 'line', 'y0': np.min(y_train.iloc[:, 0]), 'y1': np.max(y_train.iloc[:, 0]), 'x0': np.min(y_train.iloc[:, 0]), 'x1': np.max(y_train.iloc[:, 0])}])
 fig.show()
 # %%
