@@ -28,6 +28,7 @@ from tensorflow.keras.optimizers import Adam
 
 warnings.filterwarnings('ignore', category=NaturalNameWarning)
 
+#%%
 filepath = os.path.join("exercise_epftoolbox", "DE_fulldata.hdf5")
 filepath = "DE_fulldata.hdf5"
 
